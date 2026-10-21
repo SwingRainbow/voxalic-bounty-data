@@ -1,0 +1,42 @@
+name: collect-bounty-cycle
+
+# 每 10 分钟轮询一次；窗口变了才落一条数据（150 分钟一轮，10 分钟足够覆盖）。
+# 也可在 Actions 页面手动 Run workflow，用来验证公开端点是否放行云端 IP。
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect-bounty-cycle
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Collect window
+        run: node collector.mjs
+
+      - name: Commit new window
+        run: |
+          if [ ! -d data ]; then echo "no data dir"; exit 0; fi
+          git config user.name "bounty-collector"
+          git config user.email "bounty-collector@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "no new window"
+            exit 0
+          fi
+          git commit -m "data: window $(date -u +%FT%TZ)"
+          git push
