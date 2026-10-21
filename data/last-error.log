@@ -1,0 +1,2 @@
+2026-10-21T14:22:17Z egress=20.40.222.216
+collect failed: https://api.warframe.com/cdn/worldState.php -> HTTP 403
