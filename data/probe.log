@@ -1,0 +1,8 @@
+egress-ip: 57.151.138.145
+https://api.warframe.com/cdn/worldState.php => 403 0.108501s
+https://content.warframe.com/dynamic/worldState.php => 404 0.145034s
+https://oracle.browse.wf/worldState.json => 403 0.176574s
+https://oracle.browse.wf/bounty-cycle => 200 0.106349s
+https://api.warframestat.us/pc => 200 0.169356s
+https://api.warframestat.us/pc/worldstate => 404 0.123294s
+https://browse.wf/warframe-public-export-plus/ExportRegions.json => 200 0.275196s
