@@ -30,10 +30,33 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Probe endpoints
+        run: |
+          echo "== official =="
+          curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" -A "voxalic-bounty-collector/1.0" https://api.warframe.com/cdn/worldState.php || true
+          echo "== oracle =="
+          curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" -A "voxalic-bounty-collector/1.0" https://oracle.browse.wf/bounty-cycle || true
+          echo "egress-ip: $(curl -s https://api.ipify.org || true)"
+
       - name: Collect window
-        run: node collector.mjs
+        run: |
+          mkdir -p data
+          if node collector.mjs > /tmp/collect.log 2>&1; then
+            echo "collect: ok"
+            cat /tmp/collect.log
+            rm -f data/last-error.log
+          else
+            echo "collect: failed"
+            cat /tmp/collect.log
+            {
+              echo "$(date -u +%FT%TZ) egress=$(curl -s https://api.ipify.org || true)"
+              cat /tmp/collect.log
+            } > data/last-error.log
+            exit 1
+          fi
 
       - name: Commit new window
+        if: always()
         run: |
           if [ ! -d data ]; then echo "no data dir"; exit 0; fi
           git config user.name "bounty-collector"
