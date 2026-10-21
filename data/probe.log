@@ -1,17 +1,18 @@
-egress-ip: 172.214.97.225
-https://api.warframe.com/cdn/worldState.php => 403 0.081743s
-https://content.warframe.com/dynamic/worldState.php => 404 0.147164s
-https://oracle.browse.wf/worldState.json => 403 0.485032s
-https://oracle.browse.wf/bounty-cycle => 200 0.332901s
-https://api.warframestat.us/pc => 200 0.708107s
-https://api.warframestat.us/pc/worldstate => 404 0.634496s
-https://browse.wf/warframe-public-export-plus/ExportRegions.json => 200 0.837513s
+egress-ip: 20.55.214.72
+https://api.warframe.com/cdn/worldState.php => 403 0.106249s
+https://content.warframe.com/dynamic/worldState.php => 404 0.186202s
+https://oracle.browse.wf/worldState.json => 403 0.487873s
+https://oracle.browse.wf/bounty-cycle => 200 0.348460s
+https://api.warframestat.us/pc => 200 0.101407s
+https://api.warframestat.us/pc/worldstate => 404 0.571164s
+https://browse.wf/warframe-public-export-plus/ExportRegions.json => 200 0.817753s
 -- wfstat payload --
-size=202908
+size=202677
 seed-fields=0
 entrati-lab=1
 activation-fields=0
--- oracle worldState variants --
-https://oracle.browse.wf/worldState.json?t=1792593673 => 403 0.344378s
-https://oracle.browse.wf/worldstate.json => 404 0.821226s
-https://oracle.browse.wf/worldState.php => 404 0.820495s
+-- probe proxies for official worldstate --
+proxy=https://api.allorigins.win/raw?url=https%3A%2F%2Fapi.warframe.com%2Fcdn%2FworldState.php size=16 seed-fields=0
+proxy=https://api.codetabs.com/v1/proxy?quest=https://api.warframe.com/cdn/worldState.php size=16 seed-fields=0
+proxy=https://corsproxy.io/?url=https%3A%2F%2Fapi.warframe.com%2Fcdn%2FworldState.php size=81 seed-fields=0
+proxy=https://r.jina.ai/https://api.warframe.com/cdn/worldState.php size=213355 seed-fields=0
