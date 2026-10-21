@@ -1,2 +1,2 @@
-2026-10-21T14:22:17Z egress=20.40.222.216
-collect failed: https://api.warframe.com/cdn/worldState.php -> HTTP 403
+2026-10-21T14:25:58Z egress=57.154.4.115
+collect failed: worldstate unavailable: https://api.warframe.com/cdn/worldState.php -> HTTP 403 | https://content.warframe.com/dynamic/worldState.php -> HTTP 404 | https://oracle.browse.wf/worldState.json -> HTTP 403
