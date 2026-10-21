@@ -1,13 +1,13 @@
-egress-ip: 20.55.214.72
-https://api.warframe.com/cdn/worldState.php => 403 0.106249s
-https://content.warframe.com/dynamic/worldState.php => 404 0.186202s
-https://oracle.browse.wf/worldState.json => 403 0.487873s
-https://oracle.browse.wf/bounty-cycle => 200 0.348460s
-https://api.warframestat.us/pc => 200 0.101407s
-https://api.warframestat.us/pc/worldstate => 404 0.571164s
-https://browse.wf/warframe-public-export-plus/ExportRegions.json => 200 0.817753s
+egress-ip: 172.184.211.73
+https://api.warframe.com/cdn/worldState.php => 403 0.074945s
+https://content.warframe.com/dynamic/worldState.php => 404 0.117986s
+https://oracle.browse.wf/worldState.json => 403 0.145291s
+https://oracle.browse.wf/bounty-cycle => 200 0.061584s
+https://api.warframestat.us/pc => 200 0.068545s
+https://api.warframestat.us/pc/worldstate => 404 0.164152s
+https://browse.wf/warframe-public-export-plus/ExportRegions.json => 200 0.200761s
 -- wfstat payload --
-size=202677
+size=203292
 seed-fields=0
 entrati-lab=1
 activation-fields=0
@@ -15,4 +15,4 @@ activation-fields=0
 proxy=https://api.allorigins.win/raw?url=https%3A%2F%2Fapi.warframe.com%2Fcdn%2FworldState.php size=16 seed-fields=0
 proxy=https://api.codetabs.com/v1/proxy?quest=https://api.warframe.com/cdn/worldState.php size=16 seed-fields=0
 proxy=https://corsproxy.io/?url=https%3A%2F%2Fapi.warframe.com%2Fcdn%2FworldState.php size=81 seed-fields=0
-proxy=https://r.jina.ai/https://api.warframe.com/cdn/worldState.php size=213355 seed-fields=0
+proxy=https://r.jina.ai/https://api.warframe.com/cdn/worldState.php size=213669 seed-fields=0
