@@ -14,7 +14,13 @@ const ROOT = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(ROOT, 'data');
 const DATA_FILE = join(DATA_DIR, 'bounty-cycles.jsonl');
 const UA = 'voxalic-bounty-collector/1.0 (research; public endpoints only)';
-const WORLDSTATE_URL = 'https://api.warframe.com/cdn/worldState.php';
+// DE 官方 CDN 会对 GitHub 云端 IP 返回 403，因此官方优先、社区镜像兜底。
+// 记录里写明实际来源，避免把镜像数据误标成官方。
+const WORLDSTATE_URLS = [
+  'https://api.warframe.com/cdn/worldState.php',
+  'https://content.warframe.com/dynamic/worldState.php',
+  'https://oracle.browse.wf/worldState.json',
+];
 const ORACLE_URL = 'https://oracle.browse.wf/bounty-cycle';
 const TAGS = [
   'ZarimanSyndicate',
@@ -107,7 +113,18 @@ async function lastExpiry() {
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const now = Date.now();
-  const window = extractWindow(await getJson(WORLDSTATE_URL), now);
+  const failures = [];
+  let worldstate = null;
+  for (const url of WORLDSTATE_URLS) {
+    try {
+      worldstate = { data: await getJson(url), source: url };
+      break;
+    } catch (error) {
+      failures.push(error.message);
+    }
+  }
+  if (!worldstate) throw new Error(`worldstate unavailable: ${failures.join(' | ')}`);
+  const window = extractWindow(worldstate.data, now);
   const cycle = await getJson(ORACLE_URL);
 
   const oracleExpiry = typeof cycle?.expiry === 'number' ? cycle.expiry : null;
@@ -135,7 +152,13 @@ async function main() {
   }
   const record = {
     collected_at: new Date(now).toISOString(),
-    window: { activation: window.activation, expiry: window.expiry, seed: window.seed, seeds: window.seeds },
+    window: {
+      activation: window.activation,
+      expiry: window.expiry,
+      seed: window.seed,
+      seeds: window.seeds,
+      source: worldstate.source,
+    },
     oracle: { expiry: oracleExpiry, rot: cycle.rot ?? null, vaultRot: cycle.vaultRot ?? null, bounties },
     jobs: window.jobs,
   };
