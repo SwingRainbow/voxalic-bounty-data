@@ -12,6 +12,7 @@ VoxAlic 赏金窗口观测采集器（研究用）。每 150 分钟一个窗口�
 - `collector.mjs`：采集脚本。发现新窗口才追加一行到 `data/bounty-cycles.jsonl`（重复运行幂等）。
 - `.github/workflows/collect.yml`：每 10 分钟运行一次；有新记录才提交，没有则跳过。
 - `data/bounty-cycles.jsonl`：采集结果（UTF-8，每行一个窗口）。
+- `data/last-error.log`：最近一次失败的错误与出口 IP；成功后自动删除。
 
 ## 本地试跑
 
@@ -27,6 +28,7 @@ node collector.mjs             # 写入 data/
 - `window.seeds`：各派系各自记录的 Seed（部分派系会比主 Seed 小 1，属于观测事实）。
 - `oracle.bounties`：三派系按档位的节点与挑战路径。
 - `jobs`：Cetus / Solaris / Entrati 本窗口的 `jobType` 列表。
+- `window.source`：`direct` 表示直连官方 CDN，`relay:...` 表示经公共中继取到官方原文。
 
 ## 部署步骤
 
@@ -49,7 +51,9 @@ node collector.mjs             # 写入 data/
 ## 注意
 
 - 公开仓库的 Actions 分钟数不限；私有仓库每月 2000 分钟，按 10 分钟轮询会接近上限，所以建议 public。
-- 如果日志出现 `HTTP 403` / Cloudflare 挑战页，说明 Oracle 拒绝云端 IP，需要换采集位置（本机或其它主机）。
+- 如果日志出现 `HTTP 403`，通常是 DE 官方 CDN 拒绝了云端机房 IP（本项目实测 Azure 出口被拒）。`collector.mjs` 会先试官方与 `content.warframe.com`，再退回公共中继 `https://r.jina.ai/https://api.warframe.com/cdn/worldState.php` 读取同一份官方数据，记录里的 `window.source` 会标明来源。
+- Oracle 的 `/bounty-cycle` 对云端开放；`oracle.browse.wf/worldState.json` 同样会 403，不要依赖它取 Seed。
+- `api.warframestat.us` 虽然对云端开放，但响应里没有 `Seed` 字段，不能替代官方原文。
 - 定时任务若 60 天内仓库无活动会被 GitHub 暂停；本项目持续提交数据，不会触发。
 - 数据全是公开游戏数据（节点 ID、挑战路径、Seed），不含个人信息。
 - 想停止采集：在 Actions 页面禁用 `collect-bounty-cycle` 工作流，或直接删除仓库。

@@ -1,7 +1,7 @@
 name: collect-bounty-cycle
 
-# 每 10 分钟轮询一次；窗口变了才落一条数据（150 分钟一轮，10 分钟足够覆盖）。
-# 也可在 Actions 页面手动 Run workflow，用来验证公开端点是否放行云端 IP。
+# 每 10 分钟轮询；窗口变了才落一条数据（150 分钟一轮，10 分钟足够覆盖）。
+# 手动 Run workflow 可立即采一次，并额外打印端点连通性。
 on:
   schedule:
     - cron: '*/10 * * * *'
@@ -30,51 +30,23 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Probe endpoints
+      - name: Probe endpoints (manual runs only)
+        if: github.event_name == 'workflow_dispatch'
         run: |
-          mkdir -p data
           BROWSER="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-          {
-            echo "egress-ip: $(curl -s https://api.ipify.org || true)"
-            for u in \
-              "https://api.warframe.com/cdn/worldState.php" \
-              "https://content.warframe.com/dynamic/worldState.php" \
-              "https://oracle.browse.wf/worldState.json" \
-              "https://oracle.browse.wf/bounty-cycle" \
-              "https://api.warframestat.us/pc" \
-              "https://api.warframestat.us/pc/worldstate" \
-              "https://browse.wf/warframe-public-export-plus/ExportRegions.json"
-            do
-              code=$(curl -s -o /dev/null -w '%{http_code} %{time_total}s' -A "$BROWSER" \
-                -H 'Accept: application/json, text/plain, */*' \
-                -H 'Accept-Language: en-US,en;q=0.9' \
-                -H 'Referer: https://www.warframe.com/' "$u" || true)
-              echo "$u => $code"
-            done
-            echo "-- wfstat payload --"
-            curl -s -A "$BROWSER" -H 'Accept: application/json' "https://api.warframestat.us/pc" -o /tmp/ws.json || true
-            echo "size=$(wc -c < /tmp/ws.json 2>/dev/null || echo 0)"
-            echo "seed-fields=$(grep -o '\"Seed\"' /tmp/ws.json 2>/dev/null | wc -l)"
-            grep -o '\"Seed\":[0-9]*' /tmp/ws.json 2>/dev/null | head -6 || true
-            echo "entrati-lab=$(grep -o 'EntratiLabSyndicate' /tmp/ws.json 2>/dev/null | wc -l)"
-            echo "activation-fields=$(grep -o '\"Activation\"' /tmp/ws.json 2>/dev/null | wc -l)"
-            echo "-- probe proxies for official worldstate --"
-            ENC="https%3A%2F%2Fapi.warframe.com%2Fcdn%2FworldState.php"
-            for u in \
-              "https://api.allorigins.win/raw?url=$ENC" \
-              "https://api.codetabs.com/v1/proxy?quest=https://api.warframe.com/cdn/worldState.php" \
-              "https://corsproxy.io/?url=$ENC" \
-              "https://r.jina.ai/https://api.warframe.com/cdn/worldState.php"
-            do
-              curl -s -A "$BROWSER" -H 'Accept: application/json' "$u" -o /tmp/proxy.json || true
-              size=$(wc -c < /tmp/proxy.json 2>/dev/null || echo 0)
-              seeds=$(grep -o '\"Seed\"' /tmp/proxy.json 2>/dev/null | wc -l)
-              echo "proxy=$u size=$size seed-fields=$seeds"
-            done
-          } | tee data/probe.log
+          echo "egress-ip: $(curl -s https://api.ipify.org || true)"
+          for u in \
+            "https://api.warframe.com/cdn/worldState.php" \
+            "https://oracle.browse.wf/bounty-cycle" \
+            "https://oracle.browse.wf/worldState.json" \
+            "https://r.jina.ai/https://api.warframe.com/cdn/worldState.php"
+          do
+            code=$(curl -s -o /dev/null -w '%{http_code} %{time_total}s' -A "$BROWSER" \
+              -H 'Accept: application/json, text/plain, */*' "$u" || true)
+            echo "$u => $code"
+          done
 
       - name: Collect window
-        continue-on-error: true
         run: |
           mkdir -p data
           if node collector.mjs > /tmp/collect.log 2>&1; then
@@ -88,6 +60,7 @@ jobs:
               echo "$(date -u +%FT%TZ) egress=$(curl -s https://api.ipify.org || true)"
               cat /tmp/collect.log
             } > data/last-error.log
+            exit 1
           fi
 
       - name: Commit new window
