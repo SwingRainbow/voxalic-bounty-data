@@ -58,15 +58,18 @@ jobs:
             grep -o '\"Seed\":[0-9]*' /tmp/ws.json 2>/dev/null | head -6 || true
             echo "entrati-lab=$(grep -o 'EntratiLabSyndicate' /tmp/ws.json 2>/dev/null | wc -l)"
             echo "activation-fields=$(grep -o '\"Activation\"' /tmp/ws.json 2>/dev/null | wc -l)"
-            echo "-- oracle worldState variants --"
+            echo "-- probe proxies for official worldstate --"
+            ENC="https%3A%2F%2Fapi.warframe.com%2Fcdn%2FworldState.php"
             for u in \
-              "https://oracle.browse.wf/worldState.json?t=$(date +%s)" \
-              "https://oracle.browse.wf/worldstate.json" \
-              "https://oracle.browse.wf/worldState.php"
+              "https://api.allorigins.win/raw?url=$ENC" \
+              "https://api.codetabs.com/v1/proxy?quest=https://api.warframe.com/cdn/worldState.php" \
+              "https://corsproxy.io/?url=$ENC" \
+              "https://r.jina.ai/https://api.warframe.com/cdn/worldState.php"
             do
-              code=$(curl -s -o /dev/null -w '%{http_code} %{time_total}s' -A "$BROWSER" \
-                -H 'Accept: application/json' "$u" || true)
-              echo "$u => $code"
+              curl -s -A "$BROWSER" -H 'Accept: application/json' "$u" -o /tmp/proxy.json || true
+              size=$(wc -c < /tmp/proxy.json 2>/dev/null || echo 0)
+              seeds=$(grep -o '\"Seed\"' /tmp/proxy.json 2>/dev/null | wc -l)
+              echo "proxy=$u size=$size seed-fields=$seeds"
             done
           } | tee data/probe.log
 
