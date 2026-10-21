@@ -5,6 +5,11 @@ name: collect-bounty-cycle
 on:
   schedule:
     - cron: '*/10 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'collector.mjs'
+      - '.github/workflows/collect.yml'
   workflow_dispatch:
 
 permissions:
