@@ -22,6 +22,7 @@ const WORLDSTATE_URLS = [
   'https://oracle.browse.wf/worldState.json',
 ];
 const ORACLE_URL = 'https://oracle.browse.wf/bounty-cycle';
+const RELAY_URL = 'https://r.jina.ai/https://api.warframe.com/cdn/worldState.php';
 const TAGS = [
   'ZarimanSyndicate',
   'EntratiLabSyndicate',
@@ -73,6 +74,45 @@ async function getJson(url) {
   throw lastError;
 }
 
+// 中继返回的是文本（可能带 Markdown 包装），这里只取响应体交给调用方截取 JSON。
+function getTextOnce(url) {
+  return new Promise((resolve, reject) => {
+    const req = request(
+      url,
+      {
+        headers: {
+          'User-Agent': UA,
+          Accept: 'text/plain, application/json, */*',
+          'Accept-Encoding': 'identity',
+        },
+      },
+      res => {
+        if (res.statusCode !== 200) {
+          res.resume();
+          reject(new Error(`${url} -> HTTP ${res.statusCode}`));
+          return;
+        }
+        const chunks = [];
+        res.on('data', c => chunks.push(c));
+        res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+      },
+    );
+    req.setTimeout(40_000, () => req.destroy(new Error(`${url} -> timeout`)));
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+async function getRelayedJson(url) {
+  const text = await getTextOnce(url);
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start < 0 || end <= start) {
+    throw new Error(`relay payload has no JSON object (head=${text.slice(0, 160)})`);
+  }
+  return JSON.parse(text.slice(start, end + 1));
+}
+
 function ms(value) {
   if (typeof value === 'number') return value;
   const raw = value?.$date?.$numberLong;
@@ -121,6 +161,14 @@ async function main() {
       break;
     } catch (error) {
       failures.push(error.message);
+    }
+  }
+  if (!worldstate) {
+    // DE 官方 CDN 拒绝云端 IP；退一步走公开中继，内容仍是官方 worldstate。
+    try {
+      worldstate = { data: await getRelayedJson(RELAY_URL), source: `relay:${RELAY_URL}` };
+    } catch (error) {
+      failures.push(`relay: ${error.message}`);
     }
   }
   if (!worldstate) throw new Error(`worldstate unavailable: ${failures.join(' | ')}`);
